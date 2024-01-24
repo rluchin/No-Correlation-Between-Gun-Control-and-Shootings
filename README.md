@@ -1,10 +1,7 @@
-# Starter folder
+**Statement on LLM usage: Aspects of the code were written with the help of OpenAI's GPT3.5 model. The entire chat history is available in inputs/llms/usage.txt.**
 
 ## Overview
-
-This repo provides students with a foundation for their own projects associated with *Telling Stories with Data*. You do not need every aspect for every paper and you should delete aspects that you do not need.
-
-To use this folder, click the green "Code" button", then "Download ZIP". Move the downloaded folder to where you want to work on your own computer, and then modify it to suit.
+This repository provides a transparent and reproducible workflow for a statistical analysis of shootings in Toronto, where someone was injured or killed, alongside the passing of major gun legislation both reversing gun control and instating it.
 
 ## File Structure
 
