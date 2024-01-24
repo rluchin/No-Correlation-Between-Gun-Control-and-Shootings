@@ -1,0 +1,321 @@
+---
+title: "No Correlation Between Gun Control Legislation and Amount of Shootings in Toronto, Ontario"
+author: "Russell Luchin"
+date: 01-21-2024
+abstract: "The Toronto Police Service's dataset on daily shootings within Toronto was used to graph shooting trends alongside key dates of gun control legislation passing. Based on the observed trends, there is no significant correlation between passing or reversing gun control legislation on the number of shootings in Toronto. Potential positive correltion can be found when observing dates of significant jail reform, although the sample size for this legislation is limited."
+format: pdf
+editor: visual
+---
+
+## Table of Contents
+
+**1 Introduction**
+
+**2 Data**
+
+2.1 Raw Data from Toronto Police Service\
+2.2 Cleaned Data\
+2.3 Methodology
+
+**3 Results**
+
+3.1 Number of Shootings in Years of Major Legislation Receiving Ascension\
+3.2 Overview of Yearly Shootings During Pro-Gun Control Government\
+3.3 Overview of Yearly Shootings During Anti-Gun Control Government\
+3.4 Overview of Monthly Shootings During Record Year of Shootings\
+3.5 Full Overview of Total Yearly Shootings, 2006 to 2023\
+3.6 Shooting Trends Following Year of Major Municipal Gun Control\
+3.7 Shooting Trends Within Year of Major Municipal Gun Control
+
+**4 Discussion**
+
+**5 Conclusion**
+
+**References**
+
+# Introduction
+
+```{r}
+#| echo: false
+#| include: false
+## Preamble
+# Purpose: Find trends within number of shootings in Toronto
+# Author: Russell Luchin
+# Email: russell.luchin@mail.utoronto.ca
+# Date: 24 January, 2024
+
+## Workspace Setup
+library(knitr)
+library(janitor)
+library(lubridate)
+library(opendatatoronto)
+library(tidyverse)
+library(dplyr)
+```
+
+# Data
+
+```{r}
+#| echo: false
+#| include: false
+###SIMULATE
+##Credit to Rohan Alexander for this template: https://tellingstorieswithdata.com/02-drinking_from_a_fire_hose.html#torontos-unhoused-population
+
+# Set seed
+set.seed(762)
+
+# Create a dataframe with years and months
+start_date <- as.Date("2016-01-01")
+end_date <- as.Date("2022-12-31")
+date_seq <- seq(start_date, end_date, by = "1 month")
+simulation_shootings <- data.frame(
+  Date = date_seq,
+  Year = year(date_seq),
+  Month = month(date_seq, label = TRUE),
+  Shootings = round(runif(length(date_seq), min = 0, max = 10))
+)
+
+# Review first few rows of the dataset
+head(simulation_shootings)
+
+# Save the dataset to a CSV file
+write.csv(simulation_shootings, "shootings_simulation.csv", row.names = FALSE)
+```
+
+```{r}
+#| echo: false
+#| include: false
+###ACQUIRE
+
+package <- show_package("4bc5511d-0ecf-487a-9214-7b2359ad8f61")
+package
+
+toronto_shootings <-
+  list_package_resources("4bc5511d-0ecf-487a-9214-7b2359ad8f61") |>
+  filter(name ==
+           "shootings-firearm-discharges - 4326.csv") |>
+  get_resource()
+
+write_csv(
+  x = toronto_shootings,
+  file = "toronto_shootings.csv"
+)
+
+#Review both head and tail of csv file to confirm correct start and end dates
+head(toronto_shootings)
+tail(toronto_shootings)
+```
+
+```{r}
+#| echo: false
+##DATA CLEANING
+
+# Import dataset to temporary dataframe
+shootings_data <- read.csv("toronto_shootings.csv")
+
+# Group the data by Year and Month, and summarize the number of shootings
+shootings_summary <- shootings_data %>%
+  mutate(Month = factor(OCC_MONTH, levels = month.name)) %>%
+  group_by(OCC_YEAR, Month) %>%
+  summarize(Shootings = sum(DEATH + INJURIES), .groups = 'drop')
+
+# Rename columns to Year, Month, and Shootings
+toronto_shootings_cleaned <- shootings_summary %>%
+  rename(
+    Year = OCC_YEAR
+  )
+
+# Save the final dataframe to a CSV file
+write.csv(toronto_shootings_cleaned, "toronto_shootings_cleaned.csv", row.names = FALSE)
+
+#Ensure the cleaned file has the correct Year/Month/Shootings structure
+head(toronto_shootings_cleaned)
+tail(toronto_shootings_cleaned)
+
+##CLEANED DATA WAS DOUBLE CHECKED FOR ACCURACY BY CROSS-REFERENCING CLEANED SHOOTINGS WITH THE OFFICIAL TORONTO POLICE TALLIES OF PERSONS INJURED/KILLED FOUND HERE: https://data.torontopolice.on.ca/pages/shootings
+```
+
+# Results
+
+3.1
+
+```{r}
+#| echo: false
+###EXPLORE
+
+##Create 3 line graphs, graphing total shootings per month, for 2019, 2021, and 2022
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the years 2019, 2021, and 2022
+filtered_data <- shootings_summary %>%
+  filter(Year %in% c(2019, 2021, 2022))
+
+# Create a line plot with facets for each year
+ggplot(data = filtered_data, aes(x = factor(Month, levels = month.name), y = Shootings, group = Year, color = factor(Year))) +
+  geom_line() +
+  labs(title = "Shootings by Year",
+       x = "Month",
+       y = "Shootings") +
+  scale_color_manual(values = c("2019" = "blue", "2021" = "green", "2022" = "red"),
+                     labels = c("2019", "2021", "2022")) +
+  theme_minimal() +
+  facet_wrap(~Year, ncol = 1) +
+  labs(color = "Year")
+```
+
+3.2
+
+```{r}
+#| echo: false
+##Create a bar graph for total shootings by year, 2016 to 2022
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the years 2016 to 2022
+filtered_data <- shootings_summary %>%
+  filter(Year >= 2016 & Year <= 2022)
+
+# Create a bar graph for total shootings per year
+ggplot(data = filtered_data, aes(x = factor(Year), y = Shootings)) +
+  geom_bar(stat = "identity", fill = "grey") +
+  labs(title = "Total Shootings by Year (2016 to 2022)",
+       x = "Year",
+       y = "Total Shootings") +
+  theme_minimal()
+```
+
+3.3
+
+```{r}
+#| echo: false
+##Create a bar graph for total shootings by year, 2012 to 2015
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the years 2016 to 2022
+filtered_data <- shootings_summary %>%
+  filter(Year >= 2012 & Year <= 2015)
+
+# Create a bar graph for total shootings per year
+ggplot(data = filtered_data, aes(x = factor(Year), y = Shootings)) +
+  geom_bar(stat = "identity", fill = "grey") +
+  labs(title = "Total Shootings by Year (2012 to 2015)",
+       x = "Year",
+       y = "Total Shootings") +
+  theme_minimal()
+```
+
+3.4
+
+```{r}
+#| echo: false
+##Create a line graph for total shootings per month, 2019
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the year 2019
+filtered_data_2019 <- shootings_summary %>%
+  filter(Year == 2019)
+
+# Create a line graph for shootings per month in 2019
+ggplot(data = filtered_data_2019, aes(x = factor(Month, levels = month.name), y = Shootings, group = 1)) +
+  geom_line() +
+  labs(title = "Shootings by Month in 2019",
+       x = "Month",
+       y = "Shootings") +
+  theme_minimal()
+
+##BILL C-75 RECIEVED ROYAL ASCENT JUNE 21st, 2019 (Source: https://www.justice.gc.ca/eng/rp-pr/csj-sjc/jsp-sjp/c75/p3.html)
+```
+
+3.5
+
+```{r}
+#| echo: false
+##Create a bar graph for total shootings per year, 2006 to 2023
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the years 2006 to 2023
+filtered_data <- shootings_summary %>%
+  filter(Year >= 2006 & Year <= 2023)
+
+# Summarize the data to calculate the total shootings per year
+total_shootings_per_year <- filtered_data %>%
+  group_by(Year) %>%
+  summarize(TotalShootings = sum(Shootings))
+
+# Create a bar graph for total shootings per year
+ggplot(data = total_shootings_per_year, aes(x = factor(Year), y = TotalShootings)) +
+  geom_bar(stat = "identity", fill = "grey") +
+  labs(title = "Total Shootings per Year (2006 to 2023)",
+       x = "Year",
+       y = "Total Shootings") +
+  theme_minimal()
+```
+
+3.6
+
+```{r}
+#| echo: false
+##Create a line graph for total shootings per year, 2008 to 2011
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the years 2008 to 2011
+filtered_data <- shootings_summary %>%
+  filter(Year >= 2008 & Year <= 2011)
+
+# Summarize the data to calculate the total shootings per year
+total_shootings_per_year <- filtered_data %>%
+  group_by(Year) %>%
+  summarize(TotalShootings = sum(Shootings))
+
+# Create a line graph for total shootings per year
+ggplot(data = total_shootings_per_year, aes(x = Year, y = TotalShootings)) +
+  geom_line() +
+  labs(title = "Total Shootings per Year (2008 to 2011)",
+       x = "Year",
+       y = "Total Shootings") +
+  theme_minimal()
+
+```
+
+3.7
+
+```{r}
+#| echo: false
+##Create a line graph for total shootings per month, 2008
+
+# Read the cleaned dataset
+shootings_summary <- read.csv("toronto_shootings_cleaned.csv")
+
+# Filter the data for the year 2008
+filtered_data_2008 <- shootings_summary %>%
+  filter(Year == 2008)
+
+# Summarize the data to calculate the total shootings per month
+total_shootings_per_month_2008 <- filtered_data_2008 %>%
+  group_by(Month) %>%
+  summarize(TotalShootings = sum(Shootings))
+
+# Create a line graph for total shootings per month in 2008
+ggplot(data = total_shootings_per_month_2008, aes(x = factor(Month, levels = month.name), y = TotalShootings, group = 1)) +
+  geom_line() +
+  labs(title = "Total Shootings per Month in 2008",
+       x = "Month",
+       y = "Total Shootings") +
+  scale_x_discrete(limits = month.name) +  # Set the order of months
+  theme_minimal()
+```
+
+# Discussion
+
+# Conclusion
