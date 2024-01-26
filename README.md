@@ -1,10 +1,9 @@
-# Starter folder
 
 ## Overview
 
-This repo provides students with a foundation for their own projects associated with *Telling Stories with Data*. You do not need every aspect for every paper and you should delete aspects that you do not need.
+Statistical analysis of shootings in Toronto to review any potential correlation between shooting volume and gun access legislation. Files are organized by raw input, project output, and test scripts. Final product was created using Quarto with RStudio. Credits the the R Core Team for the R Programming language.
 
-To use this folder, click the green "Code" button", then "Download ZIP". Move the downloaded folder to where you want to work on your own computer, and then modify it to suit.
+**Statement on LLM usage: Aspects of the code were written with GPT3.5 and GPT4 language models. Entire chat history is available ininputs/llms/usage.txt.**
 
 ## File Structure
 
